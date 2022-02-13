@@ -1,3 +1,7 @@
+## [0.0.4] - 2022-02-13
+### Recherches
+-Recherches quant à la mise en place de l'overlay steam.
+
 ## [0.0.3] - 2022-02-10
 ### Ajout
 -Mise en place de l'API Steam.

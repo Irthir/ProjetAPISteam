@@ -14,6 +14,9 @@ int main( int argc, char* args[] )
 
 		if (steamApiManager.SteamAPIInit())
 		{
+			gameManager.setSteamManager(&steamApiManager);
+
+
 			gameManager.Update();
 
 			steamApiManager.SteamAPIQuit();
