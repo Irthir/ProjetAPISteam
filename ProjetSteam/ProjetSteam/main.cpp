@@ -1,3 +1,4 @@
+#include<windows.h>
 #include "GameManager.h"
 #include "SDLManager.h"
 #include "SteamAPIManager.h"
@@ -16,18 +17,21 @@ int main( int argc, char* args[] )
 		{
 			gameManager.setSteamManager(&steamApiManager);
 
-
 			gameManager.Update();
-
-			steamApiManager.SteamAPIQuit();
+		}
+		else
+		{
+			printf_s("Erreur lors du chargement de l'API Steam");
 		}
 
-		sdlManager.SDLQuit();
 	}
 	else
 	{
 		printf_s("Erreur lors du chargement de la SDL.");
 	}
+
+	Sleep(3000);
+
 
 	return 0;
 }

@@ -8,6 +8,11 @@ SDLManager::SDLManager()
 	this->texture = NULL;
 }
 
+SDLManager::~SDLManager()
+{
+	SDLQuit();
+}
+
 bool SDLManager::SDLInit()
 {
 	//Initialize SDL
@@ -40,7 +45,7 @@ bool SDLManager::SDLInit()
 			image = SDL_GetWindowSurface(window);
 
 			//Load IMG
-			image = IMG_Load("res/png/halflife3.png");
+			image = IMG_Load("/res/png/halflife3.png");
 			if (!image)
 			{
 				std::cout << "error creating surface: \n" << SDL_GetError() << "\n";

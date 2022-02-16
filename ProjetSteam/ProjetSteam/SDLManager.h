@@ -12,13 +12,14 @@ class SDLManager
 private :
 	const int SCREEN_WIDTH = 1600;
 	const int SCREEN_HEIGHT = 900;
-	SDL_Window *window;
+	SDL_Window* window;
 	SDL_Surface *image;
 	SDL_Renderer *renderer;
 	SDL_Texture *texture;
 
 public :
 	SDLManager();
+	~SDLManager();
 
 	bool SDLInit();
 	void SDLQuit();
