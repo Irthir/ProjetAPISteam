@@ -1,7 +1,0 @@
-﻿  GameManager.cpp
-C:\Data\Ludus\Quatrième Année\Algorithme\ProjetAPISteam\ProjetSteam\ProjetSteam\SteamAPIManager.h(8,10): fatal error C1083: Impossible d'ouvrir le fichier include : 'iostream.h' : No such file or directory
-  main.cpp
-C:\Data\Ludus\Quatrième Année\Algorithme\ProjetAPISteam\ProjetSteam\ProjetSteam\SteamAPIManager.h(8,10): fatal error C1083: Impossible d'ouvrir le fichier include : 'iostream.h' : No such file or directory
-  SteamAPIManager.cpp
-C:\Data\Ludus\Quatrième Année\Algorithme\ProjetAPISteam\ProjetSteam\ProjetSteam\SteamAPIManager.h(8,10): fatal error C1083: Impossible d'ouvrir le fichier include : 'iostream.h' : No such file or directory
-  Génération de code en cours...
