@@ -1,21 +1,41 @@
-#include <iostream>
+#include "GameManager.h"
+#include "SDLManager.h"
 #include "SteamAPIManager.h"
+#include "SDLInputManager.h"
 
-int main()
+int main(int argc, char* args[])
 {
-    SteamAPIManager pSteamManager;
+	setlocale(LC_ALL, ""); //Pour mettre les accents dans la console.
 
-    pSteamManager.SteamAPIInit();
+	GameManager gameManager;
+	SDLManager sdlManager;
+	SteamAPIManager steamApiManager;
+	SDLInputManager sdlInputManager(&gameManager);
 
-    std::cout << "Hello World!\n";
+	if (steamApiManager.SteamAPIInit())
+	{
+		gameManager.setSteamManager(&steamApiManager);
+		if (sdlManager.SDLInit())
+		{
+			gameManager.setSDLManager(&sdlManager);
 
-    while (true)
-    {
-        pSteamManager.SteamUpdate();
-    }
+			while (sdlInputManager.SDLInputUpdate())
+			{
+				gameManager.Update();
+			}
+			
+			sdlManager.SDLQuit();
+		}
+		else
+		{
+			printf_s("Erreur lors du chargement de la SDL.");
+		}
+		steamApiManager.SteamAPIQuit();
+	}
+	else
+	{
+		printf_s("Erreur lors du chargement de steam.");
+	}
 
-    pSteamManager.SteamAPIQuit();
-
-
-    return 0;
+	return 0;
 }

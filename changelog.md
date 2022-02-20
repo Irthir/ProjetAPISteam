@@ -1,3 +1,7 @@
+## [0.0.5] - 2022-02-20
+### Ajout
+-Mise en place des CallResults et ManualCallback
+
 ## [0.0.4] - 2022-02-17
 ### Ajout
 -Reprise à 0 du projet et réussite de la mise en place d'un callback à la réception d'un message.
