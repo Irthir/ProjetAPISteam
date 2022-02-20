@@ -1,6 +1,10 @@
-## [0.0.5] - 2022-02-20
+## [0.0.6] - 2022-02-20
 ### Ajout
--Mise en place des CallResults et ManualCallback
+-Mise en place des gestions de lobby, de connexion, de déconnexion et de message.
+
+## [0.0.5] - 2022-02-19
+### Ajout
+-Mise en place des CallResults et ManualCallback.
 
 ## [0.0.4] - 2022-02-17
 ### Ajout

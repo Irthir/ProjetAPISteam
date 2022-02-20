@@ -2,7 +2,9 @@
 
 SteamAPIManager::SteamAPIManager()
 //Constructeur
-{}
+{
+	bHote=false;
+}
 
 SteamAPIManager::~SteamAPIManager()
 //Destructeur
@@ -60,6 +62,17 @@ bool SteamAPIManager::SteamAPIInit()
 	m_GameConnectedFriendChatMsg.Set(hSteamPipe, this, &SteamAPIManager::OnMessageReceived);
 #endif
 
+	//Recherche de lobby
+	SteamMatchmaking()->AddRequestLobbyListResultCountFilter(1000000000);
+	SteamMatchmaking()->AddRequestLobbyListStringFilter("NOM", "PATATE", ELobbyComparison::k_ELobbyComparisonEqual);
+
+	SteamAPICall_t hSteamAPICall = SteamMatchmaking()->RequestLobbyList();
+
+
+#ifndef STEAMMANUALCALLBACK
+	m_LobbyMatchListCallResult.Set(hSteamAPICall, this, &SteamAPIManager::OnGetLobbyMatchList);
+#endif
+
 	return true;
 }
 
@@ -71,6 +84,7 @@ void SteamAPIManager::SteamAPIQuit()
 }
 
 void SteamAPIManager::SteamUpdate()
+//BUT : Gérer l'appel des évènements
 {
 #ifndef STEAMMANUALCALLBACK
 	SteamAPI_RunCallbacks();
@@ -80,15 +94,17 @@ void SteamAPIManager::SteamUpdate()
 }
 
 void SteamAPIManager::ActivateOverlay()
+//BUT : Activer l'overlay steam.
+//NOTE : Active l'évènement d'ouverture qui est reçu par steam, mais l'overlay ne s'affiche pas.
 {
 	printf_s("Activation de l'overlay Steam\n");
 	SteamFriends()->ActivateGameOverlay("Friends");
-
 }
 
 #ifndef STEAMMANUALCALLBACK
 
 void SteamAPIManager::OnGameOverlayActivated(GameOverlayActivated_t* pCallback)
+//BUT : Réagir quand l'overlay s'active ou se désactive.
 {
 
 	if (pCallback->m_bActive)
@@ -97,8 +113,9 @@ void SteamAPIManager::OnGameOverlayActivated(GameOverlayActivated_t* pCallback)
 		printf_s("\nL'overlay Steam est à présent inactive !\n");
 }
 
-//Will intercept the message and reply if valid
+
 void SteamAPIManager::OnMessageReceived(GameConnectedFriendChatMsg_t* pCallBack)
+//BUT : Récupère les messages reçus et répond.
 {
 	EChatEntryType entry = k_EChatEntryTypeInvalid;
 	char* tmp = new char[4096];
@@ -113,9 +130,194 @@ void SteamAPIManager::OnMessageReceived(GameConnectedFriendChatMsg_t* pCallBack)
 	}
 }
 
+//SUITE PAS ENCORE INTEGRÉE POUR LES CALLBACKS MANUELS !!!
+void SteamAPIManager::OnGetLobbyMatchList(LobbyMatchList_t* pCallback, bool bIOFailure)
+//BUT : Récupérer la liste des lobbys et se connecter ou en créer un le cas échéant.
+{
+	if (bIOFailure)
+	{
+		std::cout << "Échec dans la recherche de lobby." << std::endl;
+		return;
+	}
+
+	std::cout << "Nombre de lobbys existant : " << pCallback->m_nLobbiesMatching << std::endl;
+
+	bool bLobby = false;
+
+	for (int i = 0; i < pCallback->m_nLobbiesMatching; i++)
+	{
+		CSteamID LobbyID = SteamMatchmaking()->GetLobbyByIndex(i);
+		if (LobbyID.IsLobby())
+		{
+			steamIDLobby = LobbyID;
+			bLobby = true;
+			break;
+		}
+	}
+
+	if (bLobby)
+	{
+		printf_s("Lobby trouvé %lld.\n", steamIDLobby);
+
+		const char* cNomLobby = SteamMatchmaking()->GetLobbyData(steamIDLobby, "NOM");
+
+		printf_s("Nom du lobby %s.\n", cNomLobby);
+
+		//Rejoindre le Lobby trouvé
+		SteamAPICall_t hSteamAPICall = SteamMatchmaking()->JoinLobby(steamIDLobby);
+
+		m_LobbyEnterCallResult.Set(hSteamAPICall, this, &SteamAPIManager::OnLobbyEntered);
+
+		m_LobbyChatUpdate.Set(hSteamAPICall, this, &SteamAPIManager::OnLobbyChatUpdate);
+	}
+	else
+	{
+		printf_s("Lobby non trouvé %lld.\n", steamIDLobby);
+		//Création d'un Lobby
+		LobbyCreation();
+	}
+}
+
+void SteamAPIManager::OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure)
+//BUT : Évènement de création d'un lobby.
+{
+	if (bIOFailure || !pCallback->m_eResult)
+	{
+		printf_s(" Création de lobby échouée! \n");
+		return;
+	}
+
+	printf_s("Lobby créé %lld.\n", pCallback->m_ulSteamIDLobby);
+
+
+	steamIDLobby = pCallback->m_ulSteamIDLobby;
+
+	if (SteamMatchmaking()->SetLobbyData(steamIDLobby, "NOM", "PATATE"))
+	{
+		printf_s("Mise en place des données du lobby.\n");
+	}
+	else
+	{
+		printf_s("Erreur dans la mise en place des données du lobby.\n");
+	}
+
+	const char* cNomLobby = SteamMatchmaking()->GetLobbyData(steamIDLobby, "NOM");
+	printf_s("Nom du lobby %s.\n", cNomLobby);
+
+	if (SteamMatchmaking()->SetLobbyJoinable(steamIDLobby, true))
+	{
+		printf_s("Lobby ouvert %s.\n", cNomLobby);
+	}
+	else
+	{
+		printf_s("Erreur dans l'ouverture du lobby.\n");
+	}
+
+	if (SteamMatchmaking()->SetLobbyMemberLimit(steamIDLobby, 10))
+	{
+		printf_s("Lobby limité à %d joueurs.\n", 10);
+	}
+	else
+	{
+		printf_s("Erreur dans la limitation du lobby.\n");
+	}
+}
+
+void SteamAPIManager::OnLobbyEntered(LobbyEnter_t* pCallback, bool bIOFailure)
+//BUT : Évènement d'entrée dans un lobby.
+{
+	if (bIOFailure)
+	{
+		std::cout << "Échec dans l'accession à un lobby." << std::endl;
+		return;
+	}
+
+	CSteamID nIdLobby = pCallback->m_ulSteamIDLobby;
+
+	printf_s("Lobby rejoint : %lld.\n", nIdLobby);
+
+	int nbJoueur = SteamMatchmaking()->GetNumLobbyMembers(pCallback->m_ulSteamIDLobby);
+
+	printf_s("Nombre de joueurs présents dans le lobby %d.\n", nbJoueur);
+
+	for (int i = 0; i < nbJoueur; i++)
+	{
+		CSteamID UserID = SteamMatchmaking()->GetLobbyMemberByIndex(pCallback->m_ulSteamIDLobby, i);
+		printf_s("Joueur %d :\n", i+1);
+
+		const char* userName = SteamFriends()->GetFriendPersonaName(UserID);
+		std::cout << "Nom d'utilisateur : " << userName << std::endl;
+
+		const char* oldUserName = SteamFriends()->GetFriendPersonaNameHistory(UserID, 0);
+		std::cout << "Ancien nom utilisateur : " << oldUserName << std::endl;
+	}
+
+	m_LobbyEnterCallResult.Set(pCallback->m_ulSteamIDLobby, this, &SteamAPIManager::OnLobbyEntered);
+	m_LobbyChatMsg.Set(pCallback->m_ulSteamIDLobby, this, &SteamAPIManager::OnLobbyChatMessage);
+}
+
+void SteamAPIManager::OnLobbyChatUpdate(LobbyChatUpdate_t* pCallback, bool bIOFailure)
+//BUT : Évènement d'entrée ou de sortie des joueurs dans le lobby.
+{
+	if (bIOFailure)
+	{
+		std::cout << "Échec dans la mise à jour du lobby." << std::endl;
+		return;
+	}
+	
+
+	const char* sMessage;
+	switch (pCallback->m_rgfChatMemberStateChange)
+	{
+	case (k_EChatMemberStateChangeEntered):
+		sMessage = "est entré dans le lobby.";
+		break;
+	case (k_EChatMemberStateChangeLeft):
+		sMessage = "a quitté le lobby.";
+		break;
+	case (k_EChatMemberStateChangeDisconnected):
+		sMessage = "s'est déconnecté.";
+		break;
+	case (k_EChatMemberStateChangeKicked):
+		sMessage = "a été exclu.";
+		break;
+	case (k_EChatMemberStateChangeBanned):
+		sMessage = "a été banni.";
+		break;
+	default:
+		sMessage = ".";
+		break;
+	}
+
+
+	const char* sNom = SteamFriends()->GetFriendPersonaName(pCallback->m_ulSteamIDMakingChange);
+
+	printf_s("%s %s\n",sNom, sMessage);
+}
+
+void SteamAPIManager::OnLobbyChatMessage(LobbyChatMsg_t* pCallback, bool bIOFailure)
+//BUT : Évènement de réception d'un message du lobby.
+{
+	if (bIOFailure)
+	{
+		std::cout << "Échec dans la mise à jour du lobby." << std::endl;
+		return;
+	}
+	
+	char* buffer = new char[256];
+
+	SteamMatchmaking()->GetLobbyChatEntry(steamIDLobby, pCallback->m_iChatID, (CSteamID*)pCallback->m_ulSteamIDUser, buffer, 8, nullptr);
+
+	printf_s("Message reçu : \"%s\"", buffer);
+
+	delete[] buffer;
+}
+
+
 #else 
 
 void SteamAPIManager::SteamManualCallback()
+//BUT : Gérer les callbacks manuels
 {
 	HSteamPipe hSteamPipe = SteamAPI_GetHSteamPipe();
 	SteamAPI_ManualDispatch_RunFrame(hSteamPipe);
@@ -124,7 +326,7 @@ void SteamAPIManager::SteamManualCallback()
 	while (SteamAPI_ManualDispatch_GetNextCallback(hSteamPipe, &callback))
 	{
 		// Check for dispatching API call results
-		if (callback.m_iCallback == SteamAPICallCompleted_t::k_iCallback)
+		if (callback.m_iCallback == SteamAPICallCompleted_t::k_iCallback) //Ne réagit jamais dans l'état actuel car le résultat ne vaut jamais 703
 		{
 			SteamAPICallCompleted_t* pCallCompleted = (SteamAPICallCompleted_t*)callback.m_pubParam;
 			void* pTmpCallResult = malloc(callback.m_cubParam);
@@ -146,7 +348,7 @@ void SteamAPIManager::SteamManualCallback()
 			}
 			free(pTmpCallResult);
 		}
-		else if(callback.m_iCallback == 331)// Cas de l'overlay
+		else if(callback.m_iCallback == 331)//Cas de l'overlay
 		{
 			OnGameOverlayActivated((GameOverlayActivated_t*)callback.m_pubParam);
 			printf_s("Appel du callback de l'overlay \n");
@@ -179,6 +381,7 @@ void SteamAPIManager::SteamManualCallback()
 }
 
 void SteamAPIManager::OnGameOverlayActivated(GameOverlayActivated_t* pCallback, bool bIOFailure)
+//BUT : Évènement d'activation de l'overlay, identique à celui plus haut.
 {
 	if (bIOFailure)
 	{
@@ -192,8 +395,9 @@ void SteamAPIManager::OnGameOverlayActivated(GameOverlayActivated_t* pCallback, 
 		printf_s("\nL'overlay Steam est à présent inactive !\n");
 }
 
-//Will intercept the message and reply if valid
+
 void SteamAPIManager::OnMessageReceived(GameConnectedFriendChatMsg_t* pCallBack, bool bIOFailure)
+//BUT : Évènement de réception d'un message Steam.
 {
 	if (bIOFailure)
 	{
@@ -216,8 +420,9 @@ void SteamAPIManager::OnMessageReceived(GameConnectedFriendChatMsg_t* pCallBack,
 
 #endif
 
-//Auto reply message msg to sender
+
 void SteamAPIManager::MessageReceivedCallbackAutoReply(GameConnectedFriendChatMsg_t* pMessageCallBack, const char* msg)
+//BUT : Répondre à un message Steam en répondant la même chose que ce qui est reçu.
 {
 
 	SteamFriends()->ReplyToFriendMessage(pMessageCallBack->m_steamIDUser, msg);
@@ -228,4 +433,36 @@ void SteamAPIManager::MessageReceivedCallbackAutoReply(GameConnectedFriendChatMs
 	std::cout << "MESSAGE ID : " << pMessageCallBack->m_iMessageID << std::endl;
 	std::cout << "AUTO REPLIED TO MESSAGE " << pMessageCallBack->m_iMessageID << ": " << msg << std::endl;
 	std::cout << std::endl;
+}
+
+
+void SteamAPIManager::LobbyCreation()
+//BUT : Créer un lobby.
+{
+	SteamAPICall_t hSteamAPICall = SteamMatchmaking()->CreateLobby(k_ELobbyTypePublic, 2);
+
+#ifndef STEAMMANUALCALLBACK
+	m_LobbyCreatedCallResult.Set(hSteamAPICall, this, &SteamAPIManager::OnLobbyCreated);
+
+	m_LobbyEnterCallResult.Set(hSteamAPICall, this, &SteamAPIManager::OnLobbyEntered);
+
+	m_LobbyChatUpdate.Set(hSteamAPICall, this, &SteamAPIManager::OnLobbyChatUpdate);
+
+	m_LobbyChatMsg.Set(hSteamAPICall, this, &SteamAPIManager::OnLobbyChatMessage);
+#endif
+}
+
+void SteamAPIManager::SendMessage()
+//BUT : Envoyer un message.
+{
+	const char* buffer = "Patate.";
+
+	if (SteamMatchmaking()->SendLobbyChatMsg(steamIDLobby, "Patate.", 8))
+	{
+		printf_s("\"%s\" envoyé !\n", buffer);
+	}
+	else
+	{
+		printf_s("Échec lors de l'envoie de \"%s\" !\n", buffer);
+	}
 }

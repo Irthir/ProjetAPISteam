@@ -16,7 +16,7 @@ private:
 public:
 	SDLInputManager(GameManager* pGameManager);
 	
-	void SDLKeyInputHandler(const char* cInput);
+	void SDLKeyInputHandler(const char* cInput, bool* bRunning);
 	bool SDLInputUpdate();
 };
 

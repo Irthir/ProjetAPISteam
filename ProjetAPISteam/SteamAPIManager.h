@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 //Décommenter pour passer aux callbacks manuels
-#define STEAMMANUALCALLBACK 
+//#define STEAMMANUALCALLBACK 
 
 class SteamAPIManager
 {
@@ -17,6 +17,21 @@ private:
 
     STEAM_CALLBACK(SteamAPIManager, OnGameOverlayActivated, GameOverlayActivated_t);
     STEAM_CALLBACK(SteamAPIManager, OnMessageReceived, GameConnectedFriendChatMsg_t); //Réagit quand un ami envoie un message
+
+    void OnLobbyEntered(LobbyEnter_t* pCallback, bool bIOFailure);
+    CCallResult<SteamAPIManager, LobbyEnter_t> m_LobbyEnterCallResult;
+
+    void OnGetLobbyMatchList(LobbyMatchList_t* pCallback, bool bIOFailure);
+    CCallResult<SteamAPIManager, LobbyMatchList_t> m_LobbyMatchListCallResult;
+
+    void OnLobbyCreated(LobbyCreated_t* pCallback, bool bIOFailure);
+    CCallResult<SteamAPIManager, LobbyCreated_t> m_LobbyCreatedCallResult;
+
+    void OnLobbyChatUpdate(LobbyChatUpdate_t* pCallback, bool bIOFailure);
+    CCallResult<SteamAPIManager, LobbyChatUpdate_t> m_LobbyChatUpdate;
+
+    void OnLobbyChatMessage(LobbyChatMsg_t* pCallback, bool bIOFailure);
+    CCallResult<SteamAPIManager, LobbyChatMsg_t> m_LobbyChatMsg;
 
 #else
     void SteamManualCallback();
@@ -30,6 +45,8 @@ private:
     
 void MessageReceivedCallbackAutoReply(GameConnectedFriendChatMsg_t* pMessageCallBack, const char* msg); //Répond automatiquement aux messages reçus
 
+CSteamID steamIDLobby;
+bool bHote;
 
 public:
     SteamAPIManager();
@@ -40,6 +57,10 @@ public:
     void SteamUpdate();
 
     void ActivateOverlay();
+
+    void LobbyCreation();
+
+    void SendMessage();
 };
 
 #endif

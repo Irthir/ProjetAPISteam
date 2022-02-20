@@ -2,6 +2,7 @@
 #include "SDLManager.h"
 #include "SteamAPIManager.h"
 #include "SDLInputManager.h"
+#include <Windows.h>
 
 int main(int argc, char* args[])
 {

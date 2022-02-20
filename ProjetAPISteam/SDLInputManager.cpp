@@ -18,10 +18,11 @@ bool SDLInputManager::SDLInputUpdate()
 			bRunning = false;
 			break;
 		case SDL_MOUSEBUTTONDOWN:
-			bRunning = false;
+			printf_s("CLICK !\n");
+			pGameManager->pSteamManager->SendMessage();
 			break;
 		case SDL_KEYDOWN:
-			SDLKeyInputHandler(SDL_GetKeyName(event.key.keysym.sym));
+			SDLKeyInputHandler(SDL_GetKeyName(event.key.keysym.sym), &bRunning);
 		break;
 		default:
 			break;
@@ -30,7 +31,7 @@ bool SDLInputManager::SDLInputUpdate()
 	return bRunning;
 }
 
-void SDLInputManager::SDLKeyInputHandler(const char* sInput)
+void SDLInputManager::SDLKeyInputHandler(const char* sInput, bool* bRunning)
 {
 	char cInput = sInput[0];
 
@@ -40,8 +41,10 @@ void SDLInputManager::SDLKeyInputHandler(const char* sInput)
 		//Activation de l'overlay si l'utilisateur appuie sur "O".
 		pGameManager->pSteamManager->ActivateOverlay();
 		break;
-	default:
-		std::cout << cInput << std::endl;
+	case ('Q'):
+		//Fermeture du jeu si l'utilisateur appuie sur "Q".
+		printf_s("Fermeture du jeu !\n");
+		*bRunning = false;
 		break;
 	}
 }
