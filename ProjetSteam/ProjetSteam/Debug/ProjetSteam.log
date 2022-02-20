@@ -1,2 +1,0 @@
-﻿  01_hello_SDL.cpp
-C:\Data\Ludus\Quatrième Année\Algorithme\ProjetAPISteam\ProjetSteam\Source\01_hello_SDL.cpp(5,10): fatal error C1083: Impossible d'ouvrir le fichier include : 'SDL.h' : No such file or directory
