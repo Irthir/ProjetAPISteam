@@ -16,8 +16,8 @@ SteamAPIManager::~SteamAPIManager()
 bool SteamAPIManager::SteamAPIInit()
 //BUT : Initialisation de l'API Steam
 {
-	//if (SteamAPI_RestartAppIfNecessary(480))
-	if (SteamAPI_RestartAppIfNecessary(k_uAppIdInvalid))
+	if (SteamAPI_RestartAppIfNecessary(480))
+	//if (SteamAPI_RestartAppIfNecessary(k_uAppIdInvalid))
 	{
 		//return EXIT_FAILURE;
 		printf_s("Erreur lors du rechargement de l'api steam.");

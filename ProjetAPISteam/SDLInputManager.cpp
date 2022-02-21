@@ -5,7 +5,6 @@ SDLInputManager::SDLInputManager(GameManager* pGameManager)
 	this->pGameManager = pGameManager;
 }
 
-	
 bool SDLInputManager::SDLInputUpdate()
 {
 	bool bRunning = true;
